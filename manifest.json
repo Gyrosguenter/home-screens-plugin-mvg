@@ -1,7 +1,7 @@
 {
   "id": "mvg-departures",
   "name": "MVG Abfahrten",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Live-Abfahrten des Münchner Nahverkehrs (MVG) für eine Haltestelle, mit Echtzeitdaten",
   "author": "Gyrosguenter",
   "license": "MIT",

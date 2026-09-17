@@ -206,7 +206,7 @@ export default function MvgDeparturesPlugin({ config, style }: PluginComponentPr
                     padding: '0 0.5em',
                     borderRadius: scalePx(4),
                     backgroundColor: badge.background,
-                    color: '#ffffff',
+                    color: badge.textColor,
                     fontSize: '0.85em',
                     fontWeight: 700,
                     flexShrink: 0,
