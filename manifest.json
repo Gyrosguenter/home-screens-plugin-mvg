@@ -1,0 +1,67 @@
+{
+  "id": "mvg-departures",
+  "name": "MVG Abfahrten",
+  "version": "0.1.0",
+  "description": "Live-Abfahrten des Münchner Nahverkehrs (MVG) für eine Haltestelle, mit Echtzeitdaten",
+  "author": "Gyrosguenter",
+  "license": "MIT",
+  "minAppVersion": "1.0.0",
+  "moduleType": "mvg-departures",
+  "category": "Travel",
+  "icon": "Navigation",
+
+  "defaultConfig": {
+    "station": "Marienplatz",
+    "maxEntries": 8,
+    "refreshIntervalMs": 30000
+  },
+
+  "defaultSize": { "w": 420, "h": 480 },
+
+  "defaultStyle": {
+    "padding": 16,
+    "backgroundColor": "rgba(0, 0, 0, 0.4)"
+  },
+
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "station": {
+        "type": "string",
+        "title": "Haltestelle",
+        "description": "Name der Haltestelle, z. B. \"Marienplatz\" oder \"Hauptbahnhof\". Bei mehreren Treffern wird der erste verwendet.",
+        "ui:widget": "text",
+        "ui:placeholder": "Marienplatz",
+        "ui:group": "Station"
+      },
+      "maxEntries": {
+        "type": "number",
+        "title": "Anzahl Abfahrten",
+        "minimum": 1,
+        "maximum": 20,
+        "ui:widget": "slider",
+        "ui:step": 1,
+        "ui:group": "Anzeige"
+      },
+      "refreshIntervalMs": {
+        "type": "number",
+        "title": "Aktualisierung (ms)",
+        "description": "Wie oft neue Abfahrtsdaten abgerufen werden.",
+        "minimum": 15000,
+        "maximum": 300000,
+        "ui:widget": "slider",
+        "ui:step": 15000,
+        "ui:group": "Anzeige"
+      }
+    }
+  },
+
+  "exports": {
+    "component": "default"
+  },
+
+  "dataRequirements": [],
+  "prefetchUrl": null,
+  "permissions": ["network"],
+  "allowedDomains": ["www.mvg.de"]
+}
