@@ -8,26 +8,9 @@ import {
   type MvgDeparture,
   type MvgStationResolution,
 } from './mvg';
+import { lineBadgeStyle, modeGlyphStyle } from './line-style';
 
 const PLUGIN_ID = 'mvg-departures';
-
-/** Grobe MVG-Linienfarben je Verkehrsmittel — rein zur Wiedererkennung,
- *  keine exakte Markenfarbe. */
-const TRANSPORT_COLORS: Record<string, string> = {
-  UBAHN: '#1455c0',
-  SBAHN: '#408335',
-  TRAM: '#c6052a',
-  BUS: '#993399',
-  REGIONAL_BUS: '#7a4b99',
-};
-
-const TRANSPORT_LABELS: Record<string, string> = {
-  UBAHN: 'U',
-  SBAHN: 'S',
-  TRAM: 'Tram',
-  BUS: 'Bus',
-  REGIONAL_BUS: 'RBus',
-};
 
 function formatTime(ms: number): string {
   const d = new Date(ms);
@@ -142,7 +125,7 @@ export default function MvgDeparturesPlugin({ config, style }: PluginComponentPr
     >
       <div
         style={{
-          fontSize: '1.1em',
+          fontSize: '1.3em',
           fontWeight: 600,
           display: 'flex',
           alignItems: 'baseline',
@@ -173,10 +156,10 @@ export default function MvgDeparturesPlugin({ config, style }: PluginComponentPr
       )}
 
       {departures && departures.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4em', opacity: stale ? 0.6 : 1 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55em', opacity: stale ? 0.6 : 1 }}>
           {departures.map((dep, i) => {
-            const color = TRANSPORT_COLORS[dep.transportType] ?? '#666666';
-            const badgeLabel = TRANSPORT_LABELS[dep.transportType] ?? dep.transportType;
+            const badge = lineBadgeStyle(dep.transportType, dep.label);
+            const glyph = modeGlyphStyle(dep.transportType);
             const delay = dep.realtime && (dep.delayInMinutes ?? 0) > 0 ? dep.delayInMinutes : null;
 
             return (
@@ -187,27 +170,49 @@ export default function MvgDeparturesPlugin({ config, style }: PluginComponentPr
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.6em',
+                  gap: '0.5em',
                   opacity: dep.cancelled ? 0.5 : 1,
                 }}
               >
+                {/* Verkehrsmittel-Symbol: feste Form/Farbe je Modus (U eckig
+                    blau, S rund grün, Tram eckig rot, Bus rund petrol) —
+                    analog zu den offiziellen MVG-Piktogrammen. */}
+                <span
+                  aria-hidden="true"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: scalePx(24),
+                    height: scalePx(24),
+                    borderRadius: glyph.shape === 'round' ? '50%' : scalePx(5),
+                    backgroundColor: glyph.color,
+                    color: '#ffffff',
+                    fontSize: '0.7em',
+                    fontWeight: 700,
+                    flexShrink: 0,
+                  }}
+                >
+                  {glyph.letter}
+                </span>
+
                 <span
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    minWidth: scalePx(34),
-                    height: scalePx(22),
-                    padding: '0 0.4em',
+                    minWidth: scalePx(40),
+                    height: scalePx(26),
+                    padding: '0 0.5em',
                     borderRadius: scalePx(4),
-                    backgroundColor: color,
+                    backgroundColor: badge.background,
                     color: '#ffffff',
-                    fontSize: '0.75em',
+                    fontSize: '0.85em',
                     fontWeight: 700,
                     flexShrink: 0,
                   }}
                 >
-                  {dep.label || badgeLabel}
+                  {dep.label}
                 </span>
 
                 <span
@@ -216,7 +221,7 @@ export default function MvgDeparturesPlugin({ config, style }: PluginComponentPr
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
-                    fontSize: '0.9em',
+                    fontSize: '1.05em',
                     textDecoration: dep.cancelled ? 'line-through' : 'none',
                   }}
                 >
@@ -224,13 +229,13 @@ export default function MvgDeparturesPlugin({ config, style }: PluginComponentPr
                 </span>
 
                 {dep.sev && (
-                  <span style={{ fontSize: '0.6em', opacity: 0.7, flexShrink: 0 }}>SEV</span>
+                  <span style={{ fontSize: '0.7em', opacity: 0.7, flexShrink: 0 }}>SEV</span>
                 )}
                 {dep.cancelled && (
-                  <span style={{ fontSize: '0.7em', opacity: 0.8, flexShrink: 0 }}>Entfällt</span>
+                  <span style={{ fontSize: '0.8em', opacity: 0.8, flexShrink: 0 }}>Entfällt</span>
                 )}
 
-                <span style={{ fontSize: '0.9em', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
+                <span style={{ fontSize: '1.05em', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
                   {formatTime(dep.realtimeDepartureTime ?? dep.plannedDepartureTime)}
                   {delay != null && (
                     <span style={{ color: '#e08a1e', marginLeft: '0.3em' }}>+{delay}</span>
