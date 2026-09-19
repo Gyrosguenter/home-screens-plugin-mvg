@@ -54,38 +54,15 @@ const MODE_FALLBACK_COLOR: Record<string, string> = {
   SEV: '#95368c',
 };
 
-/** Symbol-Form je Verkehrsmittel, wie auf den offiziellen MVG-Piktogrammen:
- *  U-Bahn und Tram eckig, S-Bahn und Bus rund. */
-const MODE_SHAPE: Record<string, 'square' | 'round'> = {
-  UBAHN: 'square',
-  SBAHN: 'round',
-  TRAM: 'square',
-  BUS: 'round',
-  REGIONAL_BUS: 'round',
-};
-
-/** Feste Symbolfarbe + Buchstabe je Verkehrsmittel (nicht pro Linie) — das
- *  kleine Verkehrsmittel-Icon links vom Linienschild, analog zu den
- *  u-bahn.svg/s-bahn.svg/tram.svg/bus.svg-Icons der MMM-MVG-Referenz. */
-const MODE_GLYPH: Record<string, { color: string; letter: string }> = {
-  UBAHN: { color: '#0068b0', letter: 'U' },
-  SBAHN: { color: '#408335', letter: 'S' },
-  TRAM: { color: '#d82020', letter: 'T' },
-  BUS: { color: '#00586a', letter: 'B' },
-  REGIONAL_BUS: { color: '#00586a', letter: 'B' },
-};
+// Das kleine Verkehrsmittel-Symbol links vom Linienschild ist keine
+// CSS-Konstruktion mehr, sondern das Original-SVG-Piktogramm — siehe
+// src/mode-icons.tsx.
 
 export interface LineBadgeStyle {
   /** Hintergrundfarbe des Linienschilds (z. B. "U6", "S8", "19"). */
   background: string;
   /** Textfarbe — weiß für fast alle Linien, schwarz für den gelben S8-Sonderfall. */
   textColor: string;
-}
-
-export interface ModeGlyphStyle {
-  color: string;
-  letter: string;
-  shape: 'square' | 'round';
 }
 
 /** Farbe für das Linienschild: pro-Linie-Farbe, wenn bekannt (U-/S-Bahn),
@@ -96,11 +73,4 @@ export function lineBadgeStyle(transportType: string, label: string): LineBadgeS
   const perLine = LINE_COLORS[key];
   if (perLine) return { background: perLine, textColor: '#ffffff' };
   return { background: MODE_FALLBACK_COLOR[transportType] ?? '#5a5a5a', textColor: '#ffffff' };
-}
-
-/** Verkehrsmittel-Symbol (Form + feste Farbe + Buchstabe), unabhängig von der Linie. */
-export function modeGlyphStyle(transportType: string): ModeGlyphStyle {
-  const glyph = MODE_GLYPH[transportType] ?? { color: '#5a5a5a', letter: '?' };
-  const shape = MODE_SHAPE[transportType] ?? 'square';
-  return { ...glyph, shape };
 }

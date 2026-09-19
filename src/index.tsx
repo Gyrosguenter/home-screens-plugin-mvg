@@ -8,7 +8,8 @@ import {
   type MvgDeparture,
   type MvgStationResolution,
 } from './mvg';
-import { lineBadgeStyle, modeGlyphStyle } from './line-style';
+import { lineBadgeStyle } from './line-style';
+import { ModeIcon } from './mode-icons';
 
 const PLUGIN_ID = 'mvg-departures';
 
@@ -159,7 +160,6 @@ export default function MvgDeparturesPlugin({ config, style }: PluginComponentPr
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55em', opacity: stale ? 0.6 : 1 }}>
           {departures.map((dep, i) => {
             const badge = lineBadgeStyle(dep.transportType, dep.label);
-            const glyph = modeGlyphStyle(dep.transportType);
             const delay = dep.realtime && (dep.delayInMinutes ?? 0) > 0 ? dep.delayInMinutes : null;
 
             return (
@@ -174,26 +174,10 @@ export default function MvgDeparturesPlugin({ config, style }: PluginComponentPr
                   opacity: dep.cancelled ? 0.5 : 1,
                 }}
               >
-                {/* Verkehrsmittel-Symbol: feste Form/Farbe je Modus (U eckig
-                    blau, S rund grün, Tram eckig rot, Bus rund petrol) —
-                    analog zu den offiziellen MVG-Piktogrammen. */}
-                <span
-                  aria-hidden="true"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: scalePx(24),
-                    height: scalePx(24),
-                    borderRadius: glyph.shape === 'round' ? '50%' : scalePx(5),
-                    backgroundColor: glyph.color,
-                    color: '#ffffff',
-                    fontSize: '0.7em',
-                    fontWeight: 700,
-                    flexShrink: 0,
-                  }}
-                >
-                  {glyph.letter}
+                {/* Verkehrsmittel-Symbol: Original-MVG-Piktogramm (SVG),
+                    siehe src/mode-icons.tsx. */}
+                <span style={{ flexShrink: 0, display: 'inline-flex' }}>
+                  <ModeIcon transportType={dep.transportType} size={scalePx(36)} />
                 </span>
 
                 <span
