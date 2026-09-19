@@ -18,6 +18,27 @@ function formatTime(ms: number): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
+/** Minuten bis zur Abfahrt als kurzer Countdown-Text ("jetzt", "1 min",
+ *  "12 min") statt einer absoluten Uhrzeit — moderneres, auf einen Blick
+ *  erfassbares Format, wie vom Nutzer per Referenz-Mockup gewünscht. */
+function formatCountdown(ms: number, now: number): string {
+  const diffMin = Math.round((ms - now) / 60000);
+  if (diffMin <= 0) return 'jetzt';
+  return `${diffMin} min`;
+}
+
+/** Aktueller Zeitstempel, der alle `intervalMs` neu gesetzt wird — treibt den
+ *  Countdown-Text zwischen zwei MVG-Datenabfragen weiter, statt bis zum
+ *  nächsten Poll (bis zu `refreshIntervalMs`) stehen zu bleiben. */
+function useNow(intervalMs: number): number {
+  const [now, setNow] = React.useState(() => Date.now());
+  React.useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), intervalMs);
+    return () => clearInterval(id);
+  }, [intervalMs]);
+  return now;
+}
+
 /** Löst die konfigurierte Station einmalig auf (nicht bei jedem Poll) und
  *  pollt danach die Abfahrten im konfigurierten Intervall. Bei einem
  *  Fehler nach erfolgreichem Erst-Laden bleiben die zuletzt bekannten
@@ -114,6 +135,9 @@ export default function MvgDeparturesPlugin({ config, style }: PluginComponentPr
     maxEntries,
     refreshIntervalMs,
   );
+  // Tickt öfter als der Datenabruf, damit der "X min"-Countdown zwischen zwei
+  // Polls weiterläuft statt bis zu refreshIntervalMs stehen zu bleiben.
+  const now = useNow(15000);
 
   return (
     <div
@@ -157,10 +181,11 @@ export default function MvgDeparturesPlugin({ config, style }: PluginComponentPr
       )}
 
       {departures && departures.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55em', opacity: stale ? 0.6 : 1 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3em', opacity: stale ? 0.6 : 1 }}>
           {departures.map((dep, i) => {
             const badge = lineBadgeStyle(dep.transportType, dep.label);
             const delay = dep.realtime && (dep.delayInMinutes ?? 0) > 0 ? dep.delayInMinutes : null;
+            const departureMs = dep.realtimeDepartureTime ?? dep.plannedDepartureTime;
 
             return (
               // globalId ist pro Station stabil, aber innerhalb einer Antwort
@@ -172,6 +197,11 @@ export default function MvgDeparturesPlugin({ config, style }: PluginComponentPr
                   alignItems: 'center',
                   gap: '0.5em',
                   opacity: dep.cancelled ? 0.5 : 1,
+                  paddingBottom: '0.55em',
+                  borderBottom: i < departures.length - 1
+                    ? '1px solid rgba(255, 255, 255, 0.08)'
+                    : 'none',
+                  transition: 'opacity 0.4s ease',
                 }}
               >
                 {/* Verkehrsmittel-Symbol: Original-MVG-Piktogramm (SVG),
@@ -219,10 +249,22 @@ export default function MvgDeparturesPlugin({ config, style }: PluginComponentPr
                   <span style={{ fontSize: '0.8em', opacity: 0.8, flexShrink: 0 }}>Entfällt</span>
                 )}
 
-                <span style={{ fontSize: '1.05em', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
-                  {formatTime(dep.realtimeDepartureTime ?? dep.plannedDepartureTime)}
+                <span
+                  style={{
+                    fontSize: '1.05em',
+                    fontWeight: 700,
+                    fontVariantNumeric: 'tabular-nums',
+                    color: '#34d399',
+                    flexShrink: 0,
+                    transition: 'opacity 0.4s ease',
+                  }}
+                  title={formatTime(departureMs)}
+                >
+                  {formatCountdown(departureMs, now)}
                   {delay != null && (
-                    <span style={{ color: '#e08a1e', marginLeft: '0.3em' }}>+{delay}</span>
+                    <span style={{ color: '#e08a1e', marginLeft: '0.3em', fontSize: '0.75em' }}>
+                      +{delay}
+                    </span>
                   )}
                 </span>
               </div>
