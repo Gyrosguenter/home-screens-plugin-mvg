@@ -108,13 +108,14 @@ export async function fetchDepartures(
   globalId: string,
   limit: number,
   cacheTtlMs: number,
+  transportTypes: string[] = ['UBAHN', 'REGIONAL_BUS', 'BUS', 'TRAM', 'SBAHN'],
 ): Promise<MvgDeparture[]> {
   const pluginFetch = getPluginFetch();
   const params = new URLSearchParams({
     globalId,
     limit: String(limit),
     offsetInMinutes: '0',
-    transportTypes: 'UBAHN,REGIONAL_BUS,BUS,TRAM,SBAHN',
+    transportTypes: transportTypes.join(','),
   });
   const res = await pluginFetch(pluginId, {
     url: `${API_BASE}/departures?${params.toString()}`,

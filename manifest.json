@@ -1,29 +1,35 @@
 {
   "id": "mvg-departures",
   "name": "MVG Abfahrten",
-  "version": "0.4.0",
-  "description": "Live-Abfahrten des Münchner Nahverkehrs (MVG) für eine Haltestelle, mit Echtzeitdaten",
+  "version": "0.5.0",
+  "description": "Live-Abfahrten des Münchner Nahverkehrs (MVG) für bis zu zwei Haltestellen, mit Echtzeitdaten sowie Verkehrsmittel- und Richtungsfilter",
   "author": "Gyrosguenter",
   "license": "MIT",
   "minAppVersion": "1.0.0",
   "moduleType": "mvg-departures",
   "category": "Travel",
   "icon": "Navigation",
-
   "defaultConfig": {
     "station": "Marienplatz",
+    "stationTitle": "",
+    "modes": "",
+    "destinations": "",
+    "station2": "",
+    "station2Title": "",
+    "station2Modes": "",
+    "station2Destinations": "",
     "maxEntries": 8,
     "refreshIntervalMs": 30000
   },
-
-  "defaultSize": { "w": 640, "h": 720 },
-
+  "defaultSize": {
+    "w": 640,
+    "h": 720
+  },
   "defaultStyle": {
     "padding": 20,
     "fontSize": 22,
     "backgroundColor": "rgba(0, 0, 0, 0.4)"
   },
-
   "configSchema": {
     "type": "object",
     "properties": {
@@ -33,11 +39,67 @@
         "description": "Name der Haltestelle, z. B. \"Marienplatz\" oder \"Hauptbahnhof\". Bei mehreren Treffern wird der erste verwendet.",
         "ui:widget": "text",
         "ui:placeholder": "Marienplatz",
-        "ui:group": "Station"
+        "ui:group": "Station 1"
+      },
+      "stationTitle": {
+        "type": "string",
+        "title": "Anzeigename",
+        "description": "Optionaler Titel statt des Haltestellennamens, z. B. \"Johann-Clanze-Str. · stadteinwärts\".",
+        "ui:widget": "text",
+        "ui:placeholder": "",
+        "ui:group": "Station 1"
+      },
+      "modes": {
+        "type": "string",
+        "title": "Verkehrsmittel",
+        "description": "Kommagetrennt: U, S, Tram, Bus. Leer = alle Verkehrsmittel.",
+        "ui:widget": "text",
+        "ui:placeholder": "U, S",
+        "ui:group": "Station 1"
+      },
+      "destinations": {
+        "type": "string",
+        "title": "Richtung (Ziel enthält)",
+        "description": "Kommagetrennt, z. B. \"Marienplatz, Münchner Freiheit\" für stadteinwärts. Es werden nur Abfahrten gezeigt, deren Ziel einen dieser Begriffe enthält. Leer = alle Richtungen.",
+        "ui:widget": "text",
+        "ui:placeholder": "Marienplatz, Münchner Freiheit",
+        "ui:group": "Station 1"
+      },
+      "station2": {
+        "type": "string",
+        "title": "Haltestelle",
+        "description": "Optional: zweite Haltestelle, wird unter der ersten angezeigt. Leer = nur eine Haltestelle.",
+        "ui:widget": "text",
+        "ui:placeholder": "Harras",
+        "ui:group": "Station 2"
+      },
+      "station2Title": {
+        "type": "string",
+        "title": "Anzeigename",
+        "description": "Optionaler Titel statt des Haltestellennamens.",
+        "ui:widget": "text",
+        "ui:placeholder": "",
+        "ui:group": "Station 2"
+      },
+      "station2Modes": {
+        "type": "string",
+        "title": "Verkehrsmittel",
+        "description": "Kommagetrennt: U, S, Tram, Bus. Leer = alle Verkehrsmittel.",
+        "ui:widget": "text",
+        "ui:placeholder": "U, S",
+        "ui:group": "Station 2"
+      },
+      "station2Destinations": {
+        "type": "string",
+        "title": "Richtung (Ziel enthält)",
+        "description": "Kommagetrennt, z. B. \"Marienplatz, Münchner Freiheit\" für stadteinwärts. Es werden nur Abfahrten gezeigt, deren Ziel einen dieser Begriffe enthält. Leer = alle Richtungen.",
+        "ui:widget": "text",
+        "ui:placeholder": "",
+        "ui:group": "Station 2"
       },
       "maxEntries": {
         "type": "number",
-        "title": "Anzahl Abfahrten",
+        "title": "Anzahl Abfahrten je Haltestelle",
         "minimum": 1,
         "maximum": 20,
         "ui:widget": "slider",
@@ -56,13 +118,15 @@
       }
     }
   },
-
   "exports": {
     "component": "default"
   },
-
   "dataRequirements": [],
   "prefetchUrl": null,
-  "permissions": ["network"],
-  "allowedDomains": ["www.mvg.de"]
+  "permissions": [
+    "network"
+  ],
+  "allowedDomains": [
+    "www.mvg.de"
+  ]
 }

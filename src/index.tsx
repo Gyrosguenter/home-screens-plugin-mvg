@@ -10,6 +10,12 @@ import {
 } from './mvg';
 import { lineBadgeStyle } from './line-style';
 import { ModeIcon } from './mode-icons';
+import {
+  fetchLimit,
+  matchesDestination,
+  parseDestinations,
+  parseTransportTypes,
+} from './filters';
 
 const PLUGIN_ID = 'mvg-departures';
 
@@ -39,11 +45,50 @@ function useNow(intervalMs: number): number {
   return now;
 }
 
+/** Eine Haltestelle samt Anzeige-Einstellungen, aus der Modul-Config gelesen. */
+interface StationSpec {
+  station: string;
+  title: string;
+  /** Kommagetrennte Verkehrsmittel-Kürzel, leer = alle. */
+  modes: string;
+  /** Kommagetrennte Ziel-Stichwörter (Richtungsfilter), leer = alle. */
+  destinations: string;
+}
+
+function readStringConfig(config: Record<string, unknown>, key: string): string {
+  const value = config[key];
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+/** Station 1 ist immer da (Standard Marienplatz, wie bisher); Station 2 nur,
+ *  wenn ein Name eingetragen ist. */
+function readStations(config: Record<string, unknown>): StationSpec[] {
+  const stations: StationSpec[] = [
+    {
+      station: readStringConfig(config, 'station') || 'Marienplatz',
+      title: readStringConfig(config, 'stationTitle'),
+      modes: readStringConfig(config, 'modes'),
+      destinations: readStringConfig(config, 'destinations'),
+    },
+  ];
+  const second = readStringConfig(config, 'station2');
+  if (second) {
+    stations.push({
+      station: second,
+      title: readStringConfig(config, 'station2Title'),
+      modes: readStringConfig(config, 'station2Modes'),
+      destinations: readStringConfig(config, 'station2Destinations'),
+    });
+  }
+  return stations;
+}
+
 /** Löst die konfigurierte Station einmalig auf (nicht bei jedem Poll) und
  *  pollt danach die Abfahrten im konfigurierten Intervall. Bei einem
  *  Fehler nach erfolgreichem Erst-Laden bleiben die zuletzt bekannten
  *  Abfahrten sichtbar, aber als veraltet markiert (Auftrag Abschnitt 34). */
-function useMvgDepartures(station: string, maxEntries: number, refreshIntervalMs: number) {
+function useMvgDepartures(spec: StationSpec, maxEntries: number, refreshIntervalMs: number) {
+  const { station, modes, destinations } = spec;
   const [resolution, setResolution] = React.useState<MvgStationResolution | null>(null);
   const [departures, setDepartures] = React.useState<MvgDeparture[] | null>(null);
   const [error, setError] = React.useState<string | null>(null);
@@ -78,21 +123,26 @@ function useMvgDepartures(station: string, maxEntries: number, refreshIntervalMs
   React.useEffect(() => {
     if (!resolution) return;
     let cancelled = false;
+    const transportTypes = parseTransportTypes(modes);
+    const destinationTerms = parseDestinations(destinations);
 
     async function poll() {
       try {
         const data = await fetchDepartures(
           PLUGIN_ID,
           resolution!.globalId,
-          maxEntries,
+          fetchLimit(maxEntries, destinationTerms),
           // Server-seitiger Cache knapp unter dem Poll-Intervall, damit
           // mehrere Displays mit derselben Station sich einen Request teilen
           // (Auftrag Abschnitt 33), ohne selbst je eine Sekunde zu alte
           // Daten zu zeigen.
           Math.max(5000, refreshIntervalMs - 2000),
+          transportTypes,
         );
         if (cancelled) return;
-        setDepartures(data);
+        setDepartures(
+          data.filter((dep) => matchesDestination(dep.destination, destinationTerms)).slice(0, maxEntries),
+        );
         setError(null);
         setStale(false);
         setLoading(false);
@@ -120,34 +170,27 @@ function useMvgDepartures(station: string, maxEntries: number, refreshIntervalMs
       cancelled = true;
       clearInterval(id);
     };
-  }, [resolution, maxEntries, refreshIntervalMs]);
+  }, [resolution, maxEntries, refreshIntervalMs, modes, destinations]);
 
   return { stationName: resolution?.name ?? station, departures, error, stale, loading };
 }
 
-export default function MvgDeparturesPlugin({ config, style }: PluginComponentProps) {
-  const station = ((config.station as string) || 'Marienplatz').trim();
-  const maxEntries = Math.min(20, Math.max(1, (config.maxEntries as number) || 8));
-  const refreshIntervalMs = Math.max(15000, (config.refreshIntervalMs as number) || 30000);
+interface StationBoardProps {
+  spec: StationSpec;
+  maxEntries: number;
+  refreshIntervalMs: number;
+  now: number;
+}
 
+function StationBoard({ spec, maxEntries, refreshIntervalMs, now }: StationBoardProps) {
   const { stationName, departures, error, stale, loading } = useMvgDepartures(
-    station,
+    spec,
     maxEntries,
     refreshIntervalMs,
   );
-  // Tickt öfter als der Datenabruf, damit der "X min"-Countdown zwischen zwei
-  // Polls weiterläuft statt bis zu refreshIntervalMs stehen zu bleiben.
-  const now = useNow(15000);
 
   return (
-    <div
-      style={{
-        ...hostFrameStyle(style),
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.5em',
-      }}
-    >
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5em', minHeight: 0 }}>
       <div
         style={{
           fontSize: '1.3em',
@@ -159,7 +202,7 @@ export default function MvgDeparturesPlugin({ config, style }: PluginComponentPr
         }}
       >
         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {stationName}
+          {spec.title || stationName}
         </span>
         {stale && (
           <span style={{ fontSize: '0.6em', opacity: 0.6, fontWeight: 400, whiteSpace: 'nowrap' }}>
@@ -272,6 +315,38 @@ export default function MvgDeparturesPlugin({ config, style }: PluginComponentPr
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+export default function MvgDeparturesPlugin({ config, style }: PluginComponentProps) {
+  const stations = readStations(config);
+  const maxEntries = Math.min(20, Math.max(1, (config.maxEntries as number) || 8));
+  const refreshIntervalMs = Math.max(15000, (config.refreshIntervalMs as number) || 30000);
+  // Tickt öfter als der Datenabruf, damit der "X min"-Countdown zwischen zwei
+  // Polls weiterläuft statt bis zu refreshIntervalMs stehen zu bleiben.
+  const now = useNow(15000);
+
+  return (
+    <div
+      style={{
+        ...hostFrameStyle(style),
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1.2em',
+      }}
+    >
+      {stations.map((spec, i) => (
+        <StationBoard
+          // Key enthält den Namen, damit ein Stationswechsel den Hook-Zustand
+          // (Auflösung, Abfahrten) sauber neu startet.
+          key={`${i}:${spec.station}`}
+          spec={spec}
+          maxEntries={maxEntries}
+          refreshIntervalMs={refreshIntervalMs}
+          now={now}
+        />
+      ))}
     </div>
   );
 }
