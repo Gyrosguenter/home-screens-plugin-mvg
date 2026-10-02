@@ -53,12 +53,17 @@ describe('parseDestinations / matchesDestination', () => {
 });
 
 describe('fetchLimit', () => {
-  it('ohne Zielfilter genau so viele wie angezeigt werden', () => {
+  it('ohne Filter genau so viele wie angezeigt werden', () => {
     expect(fetchLimit(8, [])).toBe(8);
+    expect(fetchLimit(8, [], ALL_TRANSPORT_TYPES)).toBe(8);
   });
 
   it('mit Zielfilter deutlich mehr, gedeckelt', () => {
-    expect(fetchLimit(5, ['x'])).toBe(40);
-    expect(fetchLimit(20, ['x'])).toBe(60);
+    expect(fetchLimit(5, ['x'])).toBe(60);
+    expect(fetchLimit(20, ['x'])).toBe(100);
+  });
+
+  it('mit Verkehrsmittel-Filter ebenfalls mehr (API kürzt vor dem Filter)', () => {
+    expect(fetchLimit(6, [], ['UBAHN', 'SBAHN'])).toBe(60);
   });
 });

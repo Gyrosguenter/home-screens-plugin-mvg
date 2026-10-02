@@ -131,7 +131,7 @@ function useMvgDepartures(spec: StationSpec, maxEntries: number, refreshInterval
         const data = await fetchDepartures(
           PLUGIN_ID,
           resolution!.globalId,
-          fetchLimit(maxEntries, destinationTerms),
+          fetchLimit(maxEntries, destinationTerms, transportTypes),
           // Server-seitiger Cache knapp unter dem Poll-Intervall, damit
           // mehrere Displays mit derselben Station sich einen Request teilen
           // (Auftrag Abschnitt 33), ohne selbst je eine Sekunde zu alte

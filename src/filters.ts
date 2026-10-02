@@ -59,9 +59,20 @@ export function matchesDestination(destination: string, filters: string[]): bool
   return filters.some((term) => target.includes(term));
 }
 
-/** Wie viele Abfahrten abgefragt werden müssen, damit nach dem Zielfilter noch
- *  `maxEntries` übrig bleiben (der Filter läuft erst nach dem Abruf). */
-export function fetchLimit(maxEntries: number, destinations: string[]): number {
-  if (destinations.length === 0) return maxEntries;
-  return Math.min(60, Math.max(40, maxEntries * 4));
+/** Wie viele Abfahrten abgefragt werden müssen, damit nach den Filtern noch
+ *  `maxEntries` übrig bleiben.
+ *
+ *  Die MVG-API wendet `limit` VOR dem `transportTypes`-Filter an (live
+ *  geprüft: Harras mit nur U-Bahn und limit=6 liefert 1 statt 6 Einträge,
+ *  weil die ersten 6 Abfahrten überwiegend Busse sind). Mit einem Verkehrsmittel-
+ *  oder Zielfilter muss deshalb deutlich mehr abgerufen und client-seitig
+ *  gekürzt werden. */
+export function fetchLimit(
+  maxEntries: number,
+  destinations: string[],
+  transportTypes: string[] = ALL_TRANSPORT_TYPES,
+): number {
+  const modesFiltered = transportTypes.length < ALL_TRANSPORT_TYPES.length;
+  if (destinations.length === 0 && !modesFiltered) return maxEntries;
+  return Math.min(100, Math.max(60, maxEntries * 8));
 }
