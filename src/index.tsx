@@ -323,6 +323,8 @@ export default function MvgDeparturesPlugin({ config, style }: PluginComponentPr
   const stations = readStations(config);
   const maxEntries = Math.min(20, Math.max(1, (config.maxEntries as number) || 8));
   const refreshIntervalMs = Math.max(15000, (config.refreshIntervalMs as number) || 30000);
+  // Haltestellen nebeneinander statt untereinander (für breite, niedrige Fenster).
+  const sideBySide = config.sideBySide === true && stations.length > 1;
   // Tickt öfter als der Datenabruf, damit der "X min"-Countdown zwischen zwei
   // Polls weiterläuft statt bis zu refreshIntervalMs stehen zu bleiben.
   const now = useNow(15000);
@@ -332,20 +334,24 @@ export default function MvgDeparturesPlugin({ config, style }: PluginComponentPr
       style={{
         ...hostFrameStyle(style),
         display: 'flex',
-        flexDirection: 'column',
-        gap: '1.2em',
+        flexDirection: sideBySide ? 'row' : 'column',
+        gap: sideBySide ? '1.6em' : '1.2em',
       }}
     >
       {stations.map((spec, i) => (
-        <StationBoard
+        <div
           // Key enthält den Namen, damit ein Stationswechsel den Hook-Zustand
           // (Auflösung, Abfahrten) sauber neu startet.
           key={`${i}:${spec.station}`}
-          spec={spec}
-          maxEntries={maxEntries}
-          refreshIntervalMs={refreshIntervalMs}
-          now={now}
-        />
+          style={{ flex: sideBySide ? '1 1 0' : undefined, minWidth: 0 }}
+        >
+          <StationBoard
+            spec={spec}
+            maxEntries={maxEntries}
+            refreshIntervalMs={refreshIntervalMs}
+            now={now}
+          />
+        </div>
       ))}
     </div>
   );

@@ -1,7 +1,7 @@
 {
   "id": "mvg-departures",
   "name": "MVG Abfahrten",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "Live-Abfahrten des Münchner Nahverkehrs (MVG) für bis zu zwei Haltestellen, mit Echtzeitdaten sowie Verkehrsmittel- und Richtungsfilter",
   "author": "Gyrosguenter",
   "license": "MIT",
@@ -96,6 +96,13 @@
         "ui:widget": "text",
         "ui:placeholder": "",
         "ui:group": "Station 2"
+      },
+      "sideBySide": {
+        "type": "boolean",
+        "title": "Haltestellen nebeneinander",
+        "description": "Bei zwei Haltestellen: nebeneinander statt untereinander (für breite, niedrige Fenster).",
+        "ui:widget": "toggle",
+        "ui:group": "Anzeige"
       },
       "maxEntries": {
         "type": "number",
