@@ -81,6 +81,7 @@ function getPluginFetch(): PluginFetch {
 export async function resolveStation(
   pluginId: string,
   query: string,
+  cacheTtlMs: number = 60 * 60 * 1000,
 ): Promise<MvgStationResolution> {
   const pluginFetch = getPluginFetch();
   const url = `${API_BASE}/locations?${new URLSearchParams({ query }).toString()}`;
@@ -89,7 +90,7 @@ export async function resolveStation(
     headers: MVG_HEADERS,
     // Stationsnamen ändern sich praktisch nie — 1h Cache ist unkritisch und
     // spart wiederholte Lookups bei jedem Modul-Neustart.
-    cacheTtlMs: 60 * 60 * 1000,
+    cacheTtlMs,
   });
   if (!res.ok) {
     throw new MvgApiError(`Stationssuche fehlgeschlagen (HTTP ${res.status})`);

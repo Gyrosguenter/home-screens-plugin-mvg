@@ -104,18 +104,32 @@ function useMvgDepartures(spec: StationSpec, maxEntries: number, refreshInterval
     setDepartures(null);
     setStale(false);
 
-    resolveStation(PLUGIN_ID, station)
-      .then((res) => {
-        if (!cancelled) setResolution(res);
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return;
-        setError(err instanceof MvgApiError ? err.message : 'MVG-Daten momentan nicht verfügbar');
-        setLoading(false);
-      });
+    // Schlägt die Auflösung fehl (Netz/Server beim Start noch nicht bereit, MVG
+    // kurz gestört), wird sie mit wachsendem Abstand wiederholt. Ohne Wiederholung
+    // blieb das Modul bis zum Neuladen der Seite leer.
+    let attempt = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const run = () => {
+      // Ab dem zweiten Versuch ohne Server-Cache, damit ein gecachter Fehler
+      // nicht eine Stunde lang weitergegeben wird.
+      resolveStation(PLUGIN_ID, station, attempt === 0 ? undefined : 0)
+        .then((res) => {
+          if (!cancelled) setResolution(res);
+        })
+        .catch((err: unknown) => {
+          if (cancelled) return;
+          setError(err instanceof MvgApiError ? err.message : 'MVG-Daten momentan nicht verfügbar');
+          setLoading(false);
+          attempt += 1;
+          timer = setTimeout(run, Math.min(60000, 5000 * 2 ** Math.min(attempt, 4)));
+        });
+    };
+    run();
 
     return () => {
       cancelled = true;
+      if (timer) clearTimeout(timer);
     };
   }, [station]);
 
